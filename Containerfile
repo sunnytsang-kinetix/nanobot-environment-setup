@@ -24,7 +24,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --production
+RUN npm install --production
 
 # Copy bot code
 COPY index.js ./
