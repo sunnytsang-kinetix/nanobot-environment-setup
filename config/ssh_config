@@ -1,24 +1,23 @@
 # SSH Configuration for Nanobot
-# This file is mounted into the nanobot container
-# Using IP addresses instead of hostnames for better compatibility
+# Updated to use correct internal ports (22, not host mappings)
 
 Host worker1
     HostName 10.99.0.11
-    Port 2221
+    Port 22
     User root
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
 
 Host worker2
     HostName 10.99.0.12
-    Port 2222
+    Port 22
     User root
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
 
 Host worker3
     HostName 10.99.0.13
-    Port 2223
+    Port 22
     User root
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null

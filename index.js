@@ -33,11 +33,43 @@ const ollama = new Ollama({ host: OLLAMA_BASE_URL });
 const MCP_SERVERS = {
   ssh: async (command) => {
     return new Promise((resolve, reject) => {
-      const [host, ...cmdParts] = command.split(' ');
-      const cmd = cmdParts.join(' ');
+      // Parse command to preserve spaces in arguments
+      const parts = command.trim().split(/\s+/);
+      const host = parts[0];
+      const cmd = parts.slice(1).join(' ');
 
-      const proc = spawn('ssh', [host, cmd], {
-        env: { ...process.env, SSH_CONFIG_PATH: '/app/config/ssh_config' }
+      const proc = spawn('ssh', ['-F', '/app/config/ssh_config', host, cmd], {
+        env: { ...process.env }
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      proc.stdout.on('data', (data) => { stdout += data.toString(); });
+      proc.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          resolve(stdout || stderr || 'Command completed successfully');
+        } else {
+          reject(new Error(`SSH command failed (code ${code}): ${stderr || stdout}`));
+        }
+      });
+    });
+  },
+
+  ssh_worker: async (worker, command) => {
+    const workerMap = {
+      worker1: { host: '10.99.0.11', port: '2221' },
+      worker2: { host: '10.99.0.12', port: '2222' },
+      worker3: { host: '10.99.0.13', port: '2223' }
+    };
+
+    const { host, port } = workerMap[worker] || { host: worker, port: '22' };
+
+    return new Promise((resolve, reject) => {
+      const proc = spawn('ssh', ['-F', '/app/config/ssh_config', host, command], {
+        env: { ...process.env }
       });
 
       let stdout = '';
@@ -190,6 +222,20 @@ bot.on('message', async (msg) => {
           response = `✅ *${worker}*\n\`\`\`\n${output.slice(0, 2000)}${output.length > 2000 ? '\n... (truncated)' : ''}\n\`\`\``;
         } catch (error) {
           response = `❌ Error on ${worker}: ${error.message}`;
+        }
+      }
+      // Local file operations
+      else if (userMessage.match(/(?:^ls|^ls|^cat|^pwd|^cd)\s+(.+)?$/i)) {
+        const match = userMessage.match(/(?:^ls|^ls|^cat|^pwd|^cd)\s+(.+)?$/i);
+        const [, command, path] = match;
+        const execCmd = path ? `${command} ${path}` : command;
+
+        try {
+          await bot.sendMessage(chatId, `⏳ Running \`${execCmd}\` locally...`, { parse_mode: 'Markdown' });
+          const output = await MCP_SERVERS.ssh(`10.99.0.2 '${execCmd}'`);
+          response = `📁 *Local Command*\n\`\`\`\n${output}\n\`\`\``;
+        } catch (error) {
+          response = `❌ Error: ${error.message}`;
         }
       }
       // General LLM query
