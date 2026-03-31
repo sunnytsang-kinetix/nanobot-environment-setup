@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "ssh": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-ssh"],
+      "env": {
+        "SSH_CONFIG_PATH": "/app/config/ssh_config"
+      }
+    },
+    "podman": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-podman"],
+      "env": {
+        "PODMAN_SOCKET": "/run/podman/podman.sock"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/app/data"],
+      "env": {
+        "ALLOWED_DIRECTORIES": "/app/data"
+      }
+    }
+  }
+}
