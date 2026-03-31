@@ -445,11 +445,13 @@ bot.on('polling_error', (error) => {
 | Port conflicts | 🟡 Important | 10 minutes | Alternative ports |
 | npm ci failure | 🟡 Minor | 5 minutes | Use npm install |
 | node-pty complexity | 🟡 Minor | 30 minutes | Remove dependency |
+| Message handling crashes | 🟡 Important | 15 minutes | Add null checks |
+| Telegram API errors | 🟡 Important | 10 minutes | Handle gracefully |
 
-**Total Time Spent**: ~6 hours
-**Total Issues Resolved**: 7
+**Total Time Spent**: ~6.5 hours
+**Total Issues Resolved**: 9
 **Critical Issues**: 2/2 resolved (100%)
-**Important Issues**: 3/3 resolved (100%)
+**Important Issues**: 5/5 resolved (100%)
 
 ## 🎯 Best Practices Established
 
