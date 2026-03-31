@@ -54,28 +54,6 @@ const MCP_SERVERS = {
         }
       });
     });
-  },
-
-  podman: async (command) => {
-    return new Promise((resolve, reject) => {
-      const proc = spawn('podman', command.split(' '), {
-        env: { ...process.env, XDG_RUNTIME_DIR: '/run/user/1000' }
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout.on('data', (data) => { stdout += data.toString(); });
-      proc.stderr.on('data', (data) => { stderr += data.toString(); });
-
-      proc.on('close', (code) => {
-        if (code === 0 || code === null) {
-          resolve(stdout || stderr || 'Command completed');
-        } else {
-          reject(new Error(`Podman command failed (code ${code}): ${stderr || stdout}`));
-        }
-      });
-    });
   }
 };
 
@@ -99,7 +77,6 @@ Be concise and helpful. For long outputs, show only the most relevant parts.`;
 const COMMANDS = {
   '/help': 'Show this help message',
   '/status': 'Check system status',
-  '/containers': 'List running containers',
   '/workers': 'Check worker connectivity'
 };
 
@@ -149,33 +126,22 @@ bot.onText(/\/status/, async (msg) => {
       const models = await ollama.list();
       const ollamaStatus = models.models.length > 0 ? '✅ Connected' : '❌ No models';
 
-      // Check Podman
-      const podmanOutput = await MCP_SERVERS.podman('ps --format "{{.Names}}"');
-      const containers = podmanOutput.trim().split('\n').filter(Boolean);
-      const podmanStatus = containers.length > 0 ? `✅ ${containers.length} running` : '❌ Stopped';
+      // Check Ollama model specifically
+      const qwenModel = models.models.find(m => m.name.includes('qwen2.5-coder:7b'));
+      const modelStatus = qwenModel ? '✅ qwen2.5-coder:7b loaded' : '⚠️  qwen2.5-coder:7b not loaded';
+
+      // Note: Podman status requires host access, skip for now
+      const podmanStatus = '🐳 Podman: Check via sudo podman ps';
 
       const statusText = `📊 *System Status*
 
 🤖 Ollama: ${ollamaStatus}
-🐳 Podman: ${podmanStatus}
-
-*Running containers:*
-${containers.map(c => `  • ${c}`).join('\n') || '  None'}`;
+   ${modelStatus}
+${podmanStatus}`;
 
       await bot.sendMessage(chatId, statusText, { parse_mode: 'Markdown' });
     } catch (error) {
       await bot.sendMessage(chatId, `❌ Error checking status: ${error.message}`);
-    }
-  });
-});
-
-bot.onText(/\/containers/, async (msg) => {
-  await safeMessageHandler(msg, async (_, chatId) => {
-    try {
-      const output = await MCP_SERVERS.podman('ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"');
-      await bot.sendMessage(chatId, `📦 *Containers*\n\`\`\`\n${output}\n\`\`\``, { parse_mode: 'Markdown' });
-    } catch (error) {
-      await bot.sendMessage(chatId, `❌ Error listing containers: ${error.message}`);
     }
   });
 });
@@ -225,20 +191,6 @@ bot.on('message', async (msg) => {
         } catch (error) {
           response = `❌ Error on ${worker}: ${error.message}`;
         }
-      }
-      // Podman commands
-      else if (userMessage.match(/(?:list|show)\s+(?:all\s+)?containers/i)) {
-        const output = await MCP_SERVERS.podman('ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"');
-        response = `📦 *All Containers*\n\`\`\`\n${output}\n\`\`\``;
-      }
-      else if (userMessage.match(/(?:restart|stop|start)\s+(\S+)\s*container/i)) {
-        const match = userMessage.match(/(?:restart|stop|start)\s+(\S+)\s*container/i);
-        const action = match[1];
-        const containerMatch = userMessage.match(/(?:restart|stop|start)\s+container\s+(\S+)/i) ||
-                              userMessage.match(/(?:restart|stop|start)\s+(\S+)/i);
-        const container = containerMatch?.[1] || 'nanobot';
-        const output = await MCP_SERVERS.podman(`${action} ${container}`);
-        response = `✅ Container \`${container}\` ${action}ed\n\`\`\`\n${output}\n\`\`\``;
       }
       // General LLM query
       else {

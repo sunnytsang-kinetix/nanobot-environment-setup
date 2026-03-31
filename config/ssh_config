@@ -1,5 +1,6 @@
 # SSH Configuration for Nanobot
 # This file is mounted into the nanobot container
+# Using IP addresses instead of hostnames for better compatibility
 
 Host worker1
     HostName 10.99.0.11
