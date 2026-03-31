@@ -33,12 +33,12 @@ const ollama = new Ollama({ host: OLLAMA_BASE_URL });
 const MCP_SERVERS = {
   ssh: async (command) => {
     return new Promise((resolve, reject) => {
-      // Parse command to preserve spaces in arguments
-      const parts = command.trim().split(/\s+/);
-      const host = parts[0];
-      const cmd = parts.slice(1).join(' ');
+      // Parse command: first word is host, rest is command
+      const spaceIndex = command.indexOf(' ');
+      const host = spaceIndex > 0 ? command.substring(0, spaceIndex) : command;
+      const cmd = spaceIndex > 0 ? command.substring(spaceIndex + 1) : '';
 
-      const proc = spawn('ssh', ['-F', '/app/config/ssh_config', host, cmd], {
+      const proc = spawn('ssh', ['-F', '/app/config/ssh_config', host, 'sh', '-c', cmd], {
         env: { ...process.env }
       });
 
