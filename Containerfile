@@ -6,6 +6,7 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     openssh-client \
+    sshpass \
     curl \
     git \
     bash \
@@ -13,7 +14,7 @@ RUN apk add --no-cache \
     openssh-server \
     shadow
 
-# Create nanobot user (we'll call it "bot" for simplicity)
+# Create nanobot user (we call it "bot" for simplicity)
 RUN addgroup -S bot && adduser -S bot -G bot
 
 # Set up home directory
@@ -41,7 +42,7 @@ USER bot
 EXPOSE 3000
 
 # Create a simple health check endpoint
-RUN echo '#!/bin/sh\necho "healthy"' > /app/healthcheck.sh && chmod +x /app/healthcheck.sh
+RUN echo "#!/bin/sh\necho healthy" > /app/healthcheck.sh && chmod +x /app/healthcheck.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

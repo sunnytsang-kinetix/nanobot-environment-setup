@@ -1,5 +1,5 @@
 # SSH Configuration for Nanobot
-# Updated to use correct internal ports (22, not host mappings)
+# Workers use internal SSH (port 22)
 
 Host worker1
     HostName 10.99.0.11
@@ -19,5 +19,13 @@ Host worker3
     HostName 10.99.0.13
     Port 22
     User root
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+
+# WSL Host - for managing containers on the host
+Host wsl
+    HostName 172.19.32.79
+    Port 22
+    User sunnytsang
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
