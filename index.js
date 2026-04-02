@@ -63,13 +63,14 @@ const MCP_SERVERS = {
   // SSH to WSL (with sshpass)
   wsl: async (command) => {
     return new Promise((resolve, reject) => {
+      // Use bash -c to properly handle pipes and special characters
       const proc = spawn('sshpass', [
         '-p', WSL_PASSWORD,
         'ssh',
         '-o', 'StrictHostKeyChecking=no',
         '-o', 'UserKnownHostsFile=/dev/null',
         `${WSL_USER}@${WSL_HOST}`,
-        command
+        'bash', '-c', command
       ]);
 
       let stdout = '';
@@ -79,10 +80,15 @@ const MCP_SERVERS = {
       proc.stderr.on('data', (data) => { stderr += data.toString(); });
 
       proc.on('close', (code) => {
+        const output = stdout || stderr || '';
+        // For grep, exit code 1 means "no matches" - not an error
         if (code === 0) {
-          resolve(stdout || stderr || 'Command completed successfully');
+          resolve(output || 'Command completed successfully');
+        } else if (command.includes('grep') && code === 1) {
+          resolve(output || 'No matches found');
         } else {
-          reject(new Error(`WSL command failed (code ${code}): ${stderr || stdout}`));
+          // Still show output but note the exit code
+          resolve(output ? `${output}\n⚠️ Exit code: ${code}` : `Command failed (exit code ${code})`);
         }
       });
     });
