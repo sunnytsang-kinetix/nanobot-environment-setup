@@ -246,8 +246,8 @@ bot.on('message', async (msg) => {
 
     let response = '';
 
-    // SSH to WSL host
-    const wslMatch = userMessage.match(/^(?:wsl|ssh\s+wsl)\s+(.+)$/i);
+    // SSH to WSL host - find "wsl" anywhere in message (not just at start)
+    const wslMatch = userMessage.match(/\b(?:wsl|ssh\s+wsl)\s+(.+)$/i);
     if (wslMatch) {
       const command = wslMatch[1];
       try {
